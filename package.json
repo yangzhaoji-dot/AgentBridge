@@ -1,0 +1,9 @@
+{
+  "name": "agentbridge",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Bridge local coding agents to user-authorized web AI providers",
+  "devDependencies": {
+    "@openai/codex": "0.149.0"
+  }
+}

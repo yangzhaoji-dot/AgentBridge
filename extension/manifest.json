@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "AgentBridge",
+  "version": "0.1.0",
+  "description": "Let local Codex ask the signed-in ChatGPT webpage through a local MCP bridge.",
+  "minimum_chrome_version": "116",
+  "permissions": ["tabs", "storage", "scripting"],
+  "host_permissions": [
+    "http://127.0.0.1/*",
+    "https://chatgpt.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://chatgpt.com/*"],
+      "js": ["chatgpt_adapter.js", "content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "AgentBridge"
+  }
+}

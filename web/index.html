@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web Local Agent</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2308100e'/%3E%3Cpath d='M18 32h28M36 22l10 10-10 10' fill='none' stroke='%237ee2b8' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">WEB ↔ LOCAL</p>
+          <h1>本地 Agent 控制台</h1>
+        </div>
+        <div class="status-stack" aria-live="polite">
+          <span id="relay-status" class="status offline">中转未连接</span>
+          <span id="agent-status" class="status offline">Agent 离线</span>
+        </div>
+      </header>
+
+      <section class="connect-panel" aria-label="连接设置">
+        <label>
+          <span>WebSocket 地址</span>
+          <input id="relay-url" autocomplete="url" />
+        </label>
+        <label>
+          <span>设备 ID</span>
+          <input id="device-id" value="local-dev" autocomplete="off" />
+        </label>
+        <label>
+          <span>配对口令</span>
+          <input id="token" type="password" autocomplete="off" />
+        </label>
+        <button id="connect-button" class="primary">连接</button>
+      </section>
+
+      <section class="workspace-row">
+        <label>
+          <span>本地工作目录（留空使用 Connector 默认目录）</span>
+          <input id="cwd" placeholder="例如 C:\Users\you\project" autocomplete="off" />
+        </label>
+      </section>
+
+      <section id="messages" class="messages" aria-live="polite">
+        <article class="message system">
+          <div class="message-label">系统</div>
+          <div class="message-body">先启动中转服务和本地 Connector，再点击“连接”。</div>
+        </article>
+      </section>
+
+      <section id="approvals" class="approvals" aria-live="assertive"></section>
+
+      <form id="composer" class="composer">
+        <textarea
+          id="prompt"
+          rows="3"
+          placeholder="给本地 Codex Agent 发送任务……"
+        ></textarea>
+        <div class="composer-actions">
+          <button id="interrupt-button" type="button" class="danger" disabled>中断</button>
+          <button id="send-button" type="submit" class="primary" disabled>发送任务</button>
+        </div>
+      </form>
+    </main>
+
+    <template id="approval-template">
+      <article class="approval-card">
+        <div>
+          <p class="approval-kicker">需要你的确认</p>
+          <h2 class="approval-title"></h2>
+          <p class="approval-reason"></p>
+          <pre class="approval-detail"></pre>
+        </div>
+        <div class="approval-actions">
+          <button type="button" class="deny">拒绝</button>
+          <button type="button" class="approve">允许一次</button>
+        </div>
+      </article>
+    </template>
+
+    <script type="module" src="/static/app.js"></script>
+  </body>
+</html>

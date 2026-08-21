@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>AgentBridge ChatGPT Adapter Fixture</title>
+  </head>
+  <body>
+    <main>
+      <div id="prompt-textarea" contenteditable="true" role="textbox"></div>
+      <button data-testid="send-button" type="button">Send</button>
+      <button id="run-adapter" type="button">Run adapter</button>
+      <section id="conversation"></section>
+      <pre id="adapter-result"></pre>
+    </main>
+    <script>
+      document.querySelector('[data-testid="send-button"]').addEventListener("click", () => {
+        const conversation = document.querySelector("#conversation");
+        const answer = document.createElement("article");
+        answer.dataset.messageAuthorRole = "assistant";
+        conversation.append(answer);
+
+        const stop = document.createElement("button");
+        stop.dataset.testid = "stop-button";
+        stop.textContent = "Stop";
+        document.body.append(stop);
+
+        const chunks = ["FIXTURE", "_", "OK"];
+        let index = 0;
+        const timer = setInterval(() => {
+          answer.textContent += chunks[index++];
+          if (index === chunks.length) {
+            clearInterval(timer);
+            stop.remove();
+          }
+        }, 120);
+      });
+    </script>
+    <script src="../../extension/chatgpt_adapter.js"></script>
+    <script>
+      document.querySelector("#run-adapter").addEventListener("click", async () => {
+        const result = document.querySelector("#adapter-result");
+        try {
+          result.textContent = await AgentBridgeChatGPT.ask("1+1?", 10000);
+        } catch (error) {
+          result.textContent = `ERROR: ${error.message}`;
+        }
+      });
+    </script>
+  </body>
+</html>
