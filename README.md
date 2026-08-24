@@ -25,7 +25,28 @@ Current boundaries:
 - User confirmation remains enabled for MCP calls.
 - ChatGPT DOM changes can require adapter updates.
 
-## Quick start on Windows
+## Install on Windows
+
+### Release ZIP
+
+Download the matching `AgentBridge-vX.Y.Z-win-edge.zip` release, extract it to a
+normal writable folder, and run:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install-AgentBridge.ps1
+```
+
+If a local proxy is required for package installation:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install-AgentBridge.ps1 -Proxy http://127.0.0.1:12000
+```
+
+The installer creates the Python environment, installs Node dependencies, and
+creates only the AgentBridge desktop shortcuts. Browser extension installation
+remains a user-confirmed Edge action.
+
+### Source checkout
 
 Create the project environment:
 
@@ -118,3 +139,7 @@ node --check .\extension\content.js
 
 Do not report credentials, browser sessions, local logs, or security details in
 public issues. See [SECURITY.md](SECURITY.md).
+
+## License
+
+AgentBridge is licensed under the [Apache License 2.0](LICENSE).
