@@ -8,7 +8,7 @@ $pidPath = Join-Path $projectRoot '.runtime\agentbridge-connector.pid'
 try {
     if (-not (Test-Path -LiteralPath $pidPath)) {
         Write-Host 'AgentBridge Connector 没有运行。'
-        exit 0
+        return
     }
 
     $savedPid = [int](Get-Content -LiteralPath $pidPath -Raw).Trim()

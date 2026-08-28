@@ -111,6 +111,10 @@ and keeps the signed-in browser tab.
 Use [SERVER_DEPLOYMENT.md](SERVER_DEPLOYMENT.md) for exact commands, the Caddy
 path restriction, the server MCP configuration sample, and verification steps.
 
+If your server already supports SSH but has no domain or WSS reverse proxy, use
+[SSH_TUNNEL_DEPLOYMENT.md](SSH_TUNNEL_DEPLOYMENT.md) first. It keeps the Relay
+on server loopback and carries the Connector link inside SSH encryption.
+
 On Windows, after setting the Connector environment variables in the current
 PowerShell session, you may use:
 
