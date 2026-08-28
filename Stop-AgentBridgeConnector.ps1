@@ -14,7 +14,7 @@ try {
     $savedPid = [int](Get-Content -LiteralPath $pidPath -Raw).Trim()
     $process = Get-CimInstance Win32_Process -Filter "ProcessId = $savedPid" -ErrorAction SilentlyContinue
     if ($process) {
-        if ($process.CommandLine -notlike "*$projectRoot*" -or $process.CommandLine -notlike '*agentbridge_connector*') {
+        if ($process.CommandLine -notlike '*agentbridge_connector*') {
             throw "PID $savedPid 现在属于其他程序，已拒绝停止。"
         }
         Stop-Process -Id $savedPid -Force

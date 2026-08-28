@@ -8,6 +8,8 @@
 - Reworked response completion detection: it now prefers actual composer state
   and uses a conservative fallback instead of returning after 2.2 seconds of
   unchanged text.
+- Added a per-request completion marker protocol for long or structured calls;
+  the default MCP path now waits for an explicit final marker.
 - Verified the completion change with a browser fixture that pauses mid-answer.
 
 ## 0.2.0-dev

@@ -42,7 +42,8 @@ server:
   an extension popup for choosing the dedicated ChatGPT conversation.
 - v0.3 also fixes a truncation risk in long webpage answers: completion now
   follows the composer state or a conservative fallback rather than a 2.2-second
-  text pause.
+  text pause. The MCP tool additionally uses a per-request completion marker by
+  default, and strips it from the returned answer.
 
 Not yet verified: a real internet Relay behind TLS, a real server-side Codex
 session, and a real signed-in browser on a different machine. Follow
