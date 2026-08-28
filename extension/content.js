@@ -14,7 +14,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     message.timeoutMs,
     message.completionMarker,
   )
-    .then((answer) => sendResponse({ ok: true, answer }))
+    .then((result) =>
+      sendResponse({
+        ok: true,
+        answer: result.text,
+        completionVerified: result.completionVerified,
+      }),
+    )
     .catch((error) =>
       sendResponse({
         ok: false,

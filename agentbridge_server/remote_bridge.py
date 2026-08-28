@@ -32,6 +32,7 @@ class ConnectorInfo:
 class PendingRequest:
     device_id: str
     future: asyncio.Future[str]
+    require_completion_marker: bool
 
 
 class RemoteAgentBridge:
@@ -124,7 +125,9 @@ class RemoteAgentBridge:
 
             request_id = str(uuid4())
             future: asyncio.Future[str] = asyncio.get_running_loop().create_future()
-            self._pending[request_id] = PendingRequest(device_id, future)
+            self._pending[request_id] = PendingRequest(
+                device_id, future, require_completion_marker
+            )
             try:
                 completion_marker = (
                     make_completion_marker() if require_completion_marker else None
@@ -175,7 +178,17 @@ class RemoteAgentBridge:
                     ConnectorResponseError("ChatGPT returned an empty response")
                 )
             else:
-                pending.future.set_result(answer.strip())
+                if (
+                    pending.require_completion_marker
+                    and message.get("completion_verified") is not True
+                ):
+                    pending.future.set_exception(
+                        ConnectorResponseError(
+                            "Connector did not verify the completion marker"
+                        )
+                    )
+                else:
+                    pending.future.set_result(answer.strip())
         elif message_type == "ask.error":
             detail = message.get("error")
             pending.future.set_exception(

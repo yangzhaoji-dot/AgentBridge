@@ -44,6 +44,7 @@ async def fake_edge_extension(ready: asyncio.Event) -> None:
                             "type": "ask.response",
                             "id": message["id"],
                             "answer": "FAKE_CHATGPT_OK",
+                            "completion_verified": bool(message.get("completion_marker")),
                         }
                     )
                 )

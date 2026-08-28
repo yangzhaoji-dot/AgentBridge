@@ -197,7 +197,10 @@ globalThis.AgentBridgeChatGPT = (() => {
                 : "conservative-fallback",
           stableForMs,
         });
-        return answerText;
+        return {
+          text: answerText,
+          completionVerified: markerCompletion,
+        };
       }
       if (completionMarker && markerSeen && stopButton) {
         // A marker is sufficient evidence of completion; allow the UI to

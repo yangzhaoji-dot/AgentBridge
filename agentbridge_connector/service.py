@@ -113,12 +113,19 @@ class EdgeConnectorService:
 
         response_sender = sender or self._send_remote
         try:
-            answer = await self.bridge.ask_chatgpt(
+            result = await self.bridge.ask_chatgpt_result(
                 prompt,
                 timeout_seconds=timeout_ms / 1000,
                 completion_marker=completion_marker,
             )
-            await response_sender({"type": "ask.response", "id": request_id, "answer": answer})
+            await response_sender(
+                {
+                    "type": "ask.response",
+                    "id": request_id,
+                    "answer": result.text,
+                    "completion_verified": result.completion_verified,
+                }
+            )
         except Exception as exc:
             await response_sender(
                 {"type": "ask.error", "id": request_id, "error": str(exc)}

@@ -62,7 +62,12 @@ async def test_remote_bridge_includes_a_completion_marker_when_requested() -> No
     await bridge.handle_connector_message(
         connector,
         device_id="desk-a",
-        message={"type": "ask.response", "id": request["id"], "answer": "{}"},
+        message={
+            "type": "ask.response",
+            "id": request["id"],
+            "answer": "{}",
+            "completion_verified": True,
+        },
     )
     assert await task == "{}"
 

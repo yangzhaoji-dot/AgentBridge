@@ -77,7 +77,7 @@
       document.querySelector("#run-adapter").addEventListener("click", async () => {
         const result = document.querySelector("#adapter-result");
         try {
-          result.textContent = await AgentBridgeChatGPT.ask("1+1?", 10000);
+          result.textContent = (await AgentBridgeChatGPT.ask("1+1?", 10000)).text;
         } catch (error) {
           result.textContent = `ERROR: ${error.message}`;
         }
@@ -89,7 +89,7 @@
         document.querySelector = (selector) =>
           selector.includes("stop") ? null : originalQuerySelector(selector);
         try {
-          result.textContent = await AgentBridgeChatGPT.ask("long response?", 30000);
+          result.textContent = (await AgentBridgeChatGPT.ask("long response?", 30000)).text;
         } catch (error) {
           result.textContent = `ERROR: ${error.message}`;
         } finally {
@@ -100,7 +100,7 @@
       document.querySelector("#run-stop-gone-adapter").addEventListener("click", async () => {
         const result = document.querySelector("#adapter-result");
         try {
-          result.textContent = await AgentBridgeChatGPT.ask("stop gone?", 15000);
+          result.textContent = (await AgentBridgeChatGPT.ask("stop gone?", 15000)).text;
         } catch (error) {
           result.textContent = `ERROR: ${error.message}`;
         }
@@ -109,11 +109,13 @@
       document.querySelector("#run-marker-adapter").addEventListener("click", async () => {
         const result = document.querySelector("#adapter-result");
         try {
-          result.textContent = await AgentBridgeChatGPT.ask(
-            "marker response?",
-            30000,
-            "AGENTBRIDGE_DONE_fixture",
-          );
+          result.textContent = (
+            await AgentBridgeChatGPT.ask(
+              "marker response?",
+              30000,
+              "AGENTBRIDGE_DONE_fixture",
+            )
+          ).text;
         } catch (error) {
           result.textContent = `ERROR: ${error.message}`;
         }

@@ -78,10 +78,18 @@ async def test_connector_forwards_remote_request_to_the_local_extension() -> Non
             "type": "ask.response",
             "id": extension_request["id"],
             "answer": "2",
+            "completion_verified": True,
         }
     )
     await task
-    assert replies == [{"type": "ask.response", "id": "remote-request", "answer": "2"}]
+    assert replies == [
+        {
+            "type": "ask.response",
+            "id": "remote-request",
+            "answer": "2",
+            "completion_verified": True,
+        }
+    ]
 
 
 @pytest.mark.asyncio

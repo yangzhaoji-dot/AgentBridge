@@ -165,6 +165,7 @@ async def test_remote_relay_connector_and_extension_complete_a_two_websocket_rou
                         "type": "ask.response",
                         "id": extension_request["id"],
                         "answer": "2",
+                        "completion_verified": True,
                     }
                 )
             )

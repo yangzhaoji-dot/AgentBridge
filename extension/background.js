@@ -190,7 +190,12 @@ async function askChatGPT(message) {
     if (!result?.ok) {
       throw new Error(result?.error || "ChatGPT content script returned no result");
     }
-    response = { type: "ask.response", id: message.id, answer: result.answer };
+    response = {
+      type: "ask.response",
+      id: message.id,
+      answer: result.answer,
+      completion_verified: result.completionVerified === true,
+    };
   } catch (error) {
     response = {
       type: "ask.error",

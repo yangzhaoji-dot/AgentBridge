@@ -50,13 +50,19 @@ class ExtensionInfo:
     connected_at: str
 
 
+@dataclass(frozen=True)
+class ExtensionAnswer:
+    text: str
+    completion_verified: bool
+
+
 class AgentBridge:
     """Owns one Edge extension connection and one in-flight ChatGPT request."""
 
     def __init__(self) -> None:
         self._socket: ExtensionSocket | None = None
         self._extension_info: ExtensionInfo | None = None
-        self._pending: dict[str, asyncio.Future[str]] = {}
+        self._pending: dict[str, asyncio.Future[ExtensionAnswer]] = {}
         self._connection_lock = asyncio.Lock()
         self._send_lock = asyncio.Lock()
         self._request_lock = asyncio.Lock()
@@ -117,6 +123,20 @@ class AgentBridge:
         timeout_seconds: float,
         completion_marker: str | None = None,
     ) -> str:
+        result = await self.ask_chatgpt_result(
+            prompt,
+            timeout_seconds=timeout_seconds,
+            completion_marker=completion_marker,
+        )
+        return result.text
+
+    async def ask_chatgpt_result(
+        self,
+        prompt: str,
+        *,
+        timeout_seconds: float,
+        completion_marker: str | None = None,
+    ) -> ExtensionAnswer:
         prompt = prompt.strip()
         if not prompt:
             raise ValueError("prompt cannot be empty")
@@ -134,7 +154,9 @@ class AgentBridge:
                 )
 
             request_id = str(uuid4())
-            future: asyncio.Future[str] = asyncio.get_running_loop().create_future()
+            future: asyncio.Future[ExtensionAnswer] = (
+                asyncio.get_running_loop().create_future()
+            )
             self._pending[request_id] = future
             try:
                 async with self._send_lock:
@@ -147,7 +169,12 @@ class AgentBridge:
                     if completion_marker is not None:
                         request["completion_marker"] = completion_marker
                     await socket.send_json(request)
-                return await asyncio.wait_for(future, timeout=timeout_seconds + 5)
+                result = await asyncio.wait_for(future, timeout=timeout_seconds + 5)
+                if completion_marker is not None and not result.completion_verified:
+                    raise ExtensionResponseError(
+                        "The browser extension did not verify the completion marker"
+                    )
+                return result
             except asyncio.TimeoutError as exc:
                 raise TimeoutError(
                     f"ChatGPT webpage did not finish within {timeout_seconds:.0f} seconds"
@@ -179,7 +206,12 @@ class AgentBridge:
                     ExtensionResponseError("ChatGPT returned an empty response")
                 )
             else:
-                future.set_result(answer.strip())
+                future.set_result(
+                    ExtensionAnswer(
+                        text=answer.strip(),
+                        completion_verified=message.get("completion_verified") is True,
+                    )
+                )
         elif message_type == "ask.error":
             detail = message.get("error")
             future.set_exception(
