@@ -1,0 +1,7 @@
+# Merge this block into the server user's ~/.codex/config.toml.
+# Keep the Relay's MCP endpoint private on the server loopback interface.
+
+[mcp_servers.agentbridge]
+url = "http://127.0.0.1:8765/mcp"
+tool_timeout_sec = 240
+default_tools_approval_mode = "prompt"

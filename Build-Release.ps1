@@ -26,13 +26,16 @@ New-Item -ItemType Directory -Path $stagePath -Force | Out-Null
 
 $items = @(
     '.codex',
+    'agentbridge_connector',
     'agentbridge_server',
+    'deploy',
     'extension',
     'scripts',
     'tests',
     '.env.example',
     '.gitattributes',
     '.gitignore',
+    'AGENTS.md',
     'CONTRIBUTING.md',
     'Create-AgentBridgeShortcuts.ps1',
     'EDGE_MVP.md',
@@ -44,7 +47,10 @@ $items = @(
     'requirements.txt',
     'SECURITY.md',
     'Start-AgentBridge.ps1',
+    'Start-AgentBridgeConnector.ps1',
+    'Stop-AgentBridgeConnector.ps1',
     'Stop-AgentBridge.ps1',
+    'SERVER_DEPLOYMENT.md',
     'VERSION'
 )
 

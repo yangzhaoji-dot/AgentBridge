@@ -3,6 +3,8 @@ __pycache__/
 .pytest_cache/
 *.py[cod]
 .env
+.env.*
+!.env.example
 .coverage
 htmlcov/
 node_modules/

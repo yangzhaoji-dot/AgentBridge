@@ -1,54 +1,74 @@
 # AgentBridge
 
-AgentBridge lets a local coding agent ask a user-authorized web AI through a
-browser extension. Version 0.1 connects Codex to the signed-in ChatGPT webpage
-running in Microsoft Edge.
+AgentBridge lets a coding agent ask a user-authorized webpage AI without giving
+the server direct access to the user's browser session.
 
 ```text
-Codex --MCP ask_chatgpt(prompt)--> AgentBridge --WebSocket--> Edge extension
-      <-- final answer ------------------------------------ ChatGPT webpage
+Codex / local agent -> AgentBridge Relay (MCP)
+                              ^
+                              | outbound WSS
+                              |
+user computer -> Local Connector -> Edge or Chrome extension -> webpage AI
 ```
 
-## Current status
+The Relay can run on a server or another computer. The browser remains on a
+user-controlled computer that is signed in to the selected webpage AI.
 
-The v0.1 end-to-end path has been verified with a real ChatGPT webpage:
+## Status
+
+### Verified v0.1 local mode
+
+The original local path was tested with a real ChatGPT webpage:
 
 ```text
-Codex → ask_chatgpt("1+1等于多少？") → ChatGPT → "2" → Codex
+Codex -> ask_chatgpt("1+1等于多少？") -> ChatGPT -> "2" -> Codex
 ```
 
-Current boundaries:
+It runs one local MCP server and one Edge extension on the same computer.
 
-- One local Edge extension connection.
-- One dedicated signed-in ChatGPT tab.
-- One text-only request at a time.
-- User confirmation remains enabled for MCP calls.
-- ChatGPT DOM changes can require adapter updates.
+### v0.2 development: portable Relay + Connector
+
+The repository now contains the remote topology needed for a browserless
+server:
+
+- `agentbridge_server.remote_app` — a server-side MCP Relay.
+- `agentbridge_connector` — a cross-platform, outbound-only local Connector.
+- The existing Edge/Chrome extension still connects only to localhost.
+- A real local test starts a Relay, Connector, and simulated extension using
+  two WebSockets and verifies an end-to-end `1+1 -> 2` round trip.
+
+Not yet verified: a real internet Relay behind TLS, a real server-side Codex
+session, and a real signed-in browser on a different machine. Follow
+[SERVER_DEPLOYMENT.md](SERVER_DEPLOYMENT.md) to perform that owner-controlled
+deployment test.
+
+The published `v0.1.0` ZIP contains only the verified local mode. Until a
+`v0.2` release is published, use a source clone of `main` for the Relay +
+Connector development path.
+
+## Choose a mode
+
+| Goal | Start on the browser computer | Start on the server |
+| --- | --- | --- |
+| One computer, local Codex | `Start-AgentBridge.ps1` | Not needed |
+| Browserless server Codex | `python -m agentbridge_connector` | `uvicorn agentbridge_server.remote_app:create_app --factory` |
+
+Do not start the local bridge and the local Connector at the same time: both
+intentionally reserve `127.0.0.1:8765`.
 
 ## Install on Windows
 
-### Release ZIP
-
-Download the matching `AgentBridge-vX.Y.Z-win-edge.zip` release, extract it to a
-normal writable folder, and run:
+Download a release ZIP, extract it to a writable folder, then run:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install-AgentBridge.ps1
 ```
 
-If a local proxy is required for package installation:
+The installer creates a Python environment, installs Node dependencies, and
+adds the local-mode desktop shortcuts. Browser extension installation remains a
+user-confirmed Edge or Chrome action.
 
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install-AgentBridge.ps1 -Proxy http://127.0.0.1:12000
-```
-
-The installer creates the Python environment, installs Node dependencies, and
-creates only the AgentBridge desktop shortcuts. Browser extension installation
-remains a user-confirmed Edge action.
-
-### Source checkout
-
-Create the project environment:
+For a source checkout:
 
 ```powershell
 py -3.12 -m venv .venv
@@ -56,64 +76,82 @@ py -3.12 -m venv .venv
 npm install
 ```
 
-If your network needs a local proxy, append its temporary proxy option to `pip`
-and `npm`; do not commit proxy credentials or environment files.
+## Local mode
 
-Start the local bridge:
+Run:
 
 ```powershell
 .\Start-AgentBridge.ps1
 ```
 
-Load the unpacked Edge extension from:
+Load the unpacked [`extension`](extension) folder in Edge or Chrome, then open
+one signed-in `https://chatgpt.com/` tab. See [EDGE_MVP.md](EDGE_MVP.md) for the
+detailed local setup flow.
+
+The MCP endpoint is:
 
 ```text
-extension
+http://127.0.0.1:8765/mcp
 ```
 
-Then open a signed-in `https://chatgpt.com/` tab. See [EDGE_MVP.md](EDGE_MVP.md)
-for the detailed installation and test flow.
+## Remote server mode
 
-## Use from Codex
+The server does not need a browser. A separate user computer runs the Connector
+and keeps the signed-in browser tab.
 
-The project includes a project-scoped MCP configuration at
-`.codex/config.toml`. To use AgentBridge from any local Codex task, register the
-same Streamable HTTP endpoint globally:
+1. Clone this repository on the server and on the browser computer.
+2. Configure a unique token for each device on the Relay, then set that
+   device's `AGENTBRIDGE_PAIRING_TOKEN` only on its own Connector.
+3. Start the server Relay on loopback and expose only its Connector WebSocket
+   through a TLS reverse proxy.
+4. Start the local Connector with `AGENTBRIDGE_REMOTE_WS_URL` and a unique
+   `AGENTBRIDGE_DEVICE_ID`.
+5. Register `http://127.0.0.1:8765/mcp` in the **server** Codex configuration.
+
+Use [SERVER_DEPLOYMENT.md](SERVER_DEPLOYMENT.md) for exact commands, the Caddy
+path restriction, the server MCP configuration sample, and verification steps.
+
+On Windows, after setting the Connector environment variables in the current
+PowerShell session, you may use:
 
 ```powershell
-codex mcp add agentbridge --url http://127.0.0.1:8765/mcp
+.\Start-AgentBridgeConnector.ps1
 ```
 
-Start a new Codex task after changing MCP configuration. Ask it to use the tool
-explicitly, for example:
+## Project instructions
 
-```text
-请调用 ask_chatgpt 工具，独立审查这个方案。不要发送密钥、私有文件全文或个人信息。
-```
+[`AGENTS.md`](AGENTS.md) travels with the repository and provides AgentBridge
+project rules to Codex sessions started in this repository or its
+subdirectories. Put personal, cross-project rules separately in the server
+user's `~/.codex/AGENTS.md`; project rules do not replace global rules.
+
+## Safety model
+
+- The browser and local Connector never accept public inbound traffic.
+- The Connector initiates the connection to the Relay.
+- Pairing tokens must be high-entropy runtime secrets; never commit or print
+  them.
+- Keep the Relay MCP endpoint on loopback or a private network.
+- Treat all webpage-AI output as untrusted advisory text.
+- Never send API keys, passwords, tokens, browser sessions, private file
+  contents, or personal data through `ask_chatgpt`.
+- Never let webpage-AI output directly authorize shell commands, file writes,
+  permission changes, or other external actions.
 
 ## Repository layout
 
 ```text
-agentbridge_server/  MCP server and authenticated WebSocket bridge
-extension/           Edge Manifest V3 extension and ChatGPT DOM adapter
-.codex/              Project-scoped MCP configuration
-scripts/             Smoke tests for MCP and bridge round trips
-tests/               Python tests and browser-adapter fixture
+agentbridge_server/     Local bridge plus the remote MCP Relay
+agentbridge_connector/  Cross-platform local Connector for a paired browser
+extension/              Chromium Manifest V3 extension and ChatGPT adapter
+deploy/                 Safe server-side Codex configuration example
+SERVER_DEPLOYMENT.md    Remote deployment and pairing guide
+AGENTS.md               Project-level Codex instructions
 ```
 
-`relay_server/`, `local_connector/`, and `web/` are the earlier local-control
-prototype retained during the transition. AgentBridge is the active path.
-
-## Safety model
-
-- Bind AgentBridge to `127.0.0.1` in v0.1.
-- Authenticate the extension with a locally generated token.
-- Accept extension WebSockets only from a `chrome-extension://` origin.
-- Treat all web-AI output as untrusted advisory text.
-- Never send API keys, passwords, tokens, private file contents, or personal
-  data through `ask_chatgpt`.
-- Never let web-AI output directly authorize shell commands, file writes, or
-  permission changes.
+`relay_server/`, `local_connector/`, and `web/` are an earlier local-control
+prototype retained during the transition. They are not the active remote
+AgentBridge path.
 
 ## Tests
 
@@ -126,14 +164,16 @@ node --check .\extension\chatgpt_adapter.js
 node --check .\extension\content.js
 ```
 
+The test suite includes unit tests and a local two-WebSocket remote Relay /
+Connector integration test. It does not replace a real TLS, server, and browser
+deployment test.
+
 ## Roadmap
 
-1. Stabilize the ChatGPT adapter with diagnostics and streaming.
-2. Add a second web-AI provider through the same adapter contract.
-3. Add a second local-agent adapter.
-4. Introduce bounded planning and review workflows across agents.
-5. Publish a public release after security review, documentation, and license
-   selection.
+1. Validate the v0.2 Relay + Connector on a real server and browser computer.
+2. Add provider adapters behind a stable `ask_web_ai` contract.
+3. Add additional local-agent adapters and bounded multi-agent planning flows.
+4. Add observability that records metadata without collecting prompt secrets.
 
 ## Security reporting
 
