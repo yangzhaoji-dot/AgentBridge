@@ -1,4 +1,4 @@
-# AgentBridge v0.1：Edge + ChatGPT 网页 + Codex
+# AgentBridge v0.3：Edge/Chrome + ChatGPT 网页 + Codex
 
 目标链路：
 
@@ -10,7 +10,13 @@ Codex --MCP ask_chatgpt(prompt)--> AgentBridge :8765
 
 ## 第一次安装 Edge 扩展
 
-1. 双击项目中的 `Start-AgentBridge.ps1`，或在 PowerShell 中运行：
+1. 选择一种本机启动方式：
+
+   - 单机本地模式：双击 `Start-AgentBridge.ps1`；
+   - 服务器 SSH 模式：先按 [SSH_TUNNEL_DEPLOYMENT.md](SSH_TUNNEL_DEPLOYMENT.md)
+     保存 SSH 配置，再运行 `Start-AgentBridgeSshConnector.ps1`。
+
+   单机本地模式命令为：
 
    ```powershell
    powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Start-AgentBridge.ps1
@@ -25,7 +31,12 @@ Codex --MCP ask_chatgpt(prompt)--> AgentBridge :8765
    C:\Users\yangz\Documents\Codex\web-local-agent\extension
    ```
 
-6. 打开一个已登录的 `https://chatgpt.com/` 标签页。扩展图标显示 `ON` 表示连接成功。
+6. 打开一个或多个已登录的 `https://chatgpt.com/` 标签页。
+7. 点击浏览器工具栏中的 AgentBridge 图标，在弹窗中点击你想专门交给
+   AgentBridge 的那个对话。被选中的对话会显示“当前专用对话”。
+
+扩展不会群发；服务器任务只会写入你在弹窗中选择的一个标签页。若该标签
+关闭，扩展会在下一次调用时要求重新选择。
 
 扩展自动从 `127.0.0.1:8765` 获取本机随机令牌。服务只监听本机，WebSocket 还会校验 `chrome-extension://` Origin。
 
@@ -61,7 +72,7 @@ Codex tool call
 
 ## 当前限制
 
-- 只支持一个 Edge 扩展连接、一个专用 ChatGPT 标签页和一个并发请求。
+- 只支持一个 Edge/Chrome 扩展连接、一个专用 ChatGPT 标签页和一个并发请求。
 - 只支持纯文本，返回完整回答，不提供流式增量。
 - ChatGPT 网页 DOM 更新后，`chatgpt_adapter.js` 的选择器可能需要调整。
 - 不要在 prompt 中发送密码、API Key、私有文件内容或其他敏感数据。

@@ -58,7 +58,7 @@ async def lifespan(_: FastAPI):
         yield
 
 
-app = FastAPI(title="AgentBridge", version="0.2.0-dev", lifespan=lifespan)
+app = FastAPI(title="AgentBridge", version="0.3.0-dev", lifespan=lifespan)
 
 
 @app.get("/")
@@ -66,7 +66,7 @@ async def root() -> dict[str, Any]:
     status = await bridge.status()
     return {
         "name": "AgentBridge",
-        "version": "0.2.0-dev",
+        "version": "0.3.0-dev",
         "mcp_url": "http://127.0.0.1:8765/mcp",
         **status,
     }

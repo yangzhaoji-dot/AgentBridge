@@ -26,7 +26,7 @@ Codex -> ask_chatgpt("1+1等于多少？") -> ChatGPT -> "2" -> Codex
 
 It runs one local MCP server and one Edge extension on the same computer.
 
-### v0.2 development: portable Relay + Connector
+### Verified v0.2 remote path and v0.3 usability upgrade
 
 The repository now contains the remote topology needed for a browserless
 server:
@@ -36,6 +36,10 @@ server:
 - The existing Edge/Chrome extension still connects only to localhost.
 - A real local test starts a Relay, Connector, and simulated extension using
   two WebSockets and verifies an end-to-end `1+1 -> 2` round trip.
+- A real server MCP call has been verified through an SSH tunnel to a paired
+  local Edge/ChatGPT session and returned `2`.
+- v0.3 adds a saved nonsecret SSH profile, start/status/test/stop commands, and
+  an extension popup for choosing the dedicated ChatGPT conversation.
 
 Not yet verified: a real internet Relay behind TLS, a real server-side Codex
 session, and a real signed-in browser on a different machine. Follow
@@ -43,8 +47,8 @@ session, and a real signed-in browser on a different machine. Follow
 deployment test.
 
 The published `v0.1.0` ZIP contains only the verified local mode. Until a
-`v0.2` release is published, use a source clone of `main` for the Relay +
-Connector development path.
+`v0.3` release is published, use a source clone of `main` for the Relay +
+Connector path.
 
 ## Choose a mode
 
@@ -88,6 +92,9 @@ Load the unpacked [`extension`](extension) folder in Edge or Chrome, then open
 one signed-in `https://chatgpt.com/` tab. See [EDGE_MVP.md](EDGE_MVP.md) for the
 detailed local setup flow.
 
+Click the AgentBridge extension icon and choose the exact ChatGPT conversation
+to reserve for AgentBridge. Other ChatGPT tabs will not receive tasks.
+
 The MCP endpoint is:
 
 ```text
@@ -113,7 +120,9 @@ path restriction, the server MCP configuration sample, and verification steps.
 
 If your server already supports SSH but has no domain or WSS reverse proxy, use
 [SSH_TUNNEL_DEPLOYMENT.md](SSH_TUNNEL_DEPLOYMENT.md) first. It keeps the Relay
-on server loopback and carries the Connector link inside SSH encryption.
+on server loopback and carries the Connector link inside SSH encryption. It
+also documents the one-time configuration, start, status, smoke test, and stop
+workflow.
 
 On Windows, after setting the Connector environment variables in the current
 PowerShell session, you may use:
@@ -175,8 +184,8 @@ deployment test.
 
 ## Roadmap
 
-1. Validate the v0.2 Relay + Connector on a real server and browser computer.
-2. Add provider adapters behind a stable `ask_web_ai` contract.
+1. Add provider adapters behind a stable `ask_web_ai` contract.
+2. Add caller-to-device authorization before sharing a Relay across users.
 3. Add additional local-agent adapters and bounded multi-agent planning flows.
 4. Add observability that records metadata without collecting prompt secrets.
 

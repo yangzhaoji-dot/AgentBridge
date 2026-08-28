@@ -105,7 +105,7 @@ async function connect() {
 }
 
 async function getDedicatedChatGPTTab() {
-  const tabs = await chrome.tabs.query({ url: "https://chatgpt.com/*" });
+  const tabs = await getChatGPTTabs();
   if (!tabs.length) {
     throw new Error("Open one signed-in chatgpt.com tab in Edge first");
   }
@@ -117,6 +117,40 @@ async function getDedicatedChatGPTTab() {
   const activeTab = tabs.find((tab) => tab.active) || tabs[0];
   await chrome.storage.local.set({ chatgptTabId: activeTab.id });
   return activeTab;
+}
+
+async function getChatGPTTabs() {
+  return chrome.tabs.query({ url: "https://chatgpt.com/*" });
+}
+
+async function listChatGPTTabs() {
+  const [tabs, configured] = await Promise.all([
+    getChatGPTTabs(),
+    chrome.storage.local.get("chatgptTabId"),
+  ]);
+  return {
+    bridgeConnected: socket?.readyState === WebSocket.OPEN,
+    selectedTabId: configured.chatgptTabId ?? null,
+    tabs: tabs.map((tab) => ({
+      id: tab.id,
+      title: tab.title || "未命名 ChatGPT 对话",
+      active: Boolean(tab.active),
+      selected: tab.id === configured.chatgptTabId,
+    })),
+  };
+}
+
+async function selectChatGPTTab(tabId) {
+  if (!Number.isInteger(tabId)) {
+    throw new Error("Invalid ChatGPT tab id");
+  }
+  const tabs = await getChatGPTTabs();
+  const target = tabs.find((tab) => tab.id === tabId);
+  if (!target) {
+    throw new Error("The selected ChatGPT tab is no longer open");
+  }
+  await chrome.storage.local.set({ chatgptTabId: tabId });
+  return { id: tabId, title: target.title || "未命名 ChatGPT 对话" };
 }
 
 async function sendToChatGPTContentScript(tabId, message) {
@@ -184,9 +218,32 @@ function handleBridgeMessage(message) {
 
 chrome.runtime.onInstalled.addListener(() => connect());
 chrome.runtime.onStartup.addListener(() => connect());
-chrome.runtime.onMessage.addListener((message) => {
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.type === "agentbridge.content.ready") {
     connect();
+    return;
+  }
+  if (message?.type === "agentbridge.tabs.list") {
+    listChatGPTTabs()
+      .then((result) => sendResponse({ ok: true, ...result }))
+      .catch((error) =>
+        sendResponse({
+          ok: false,
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
+    return true;
+  }
+  if (message?.type === "agentbridge.tabs.select") {
+    selectChatGPTTab(message.tabId)
+      .then((tab) => sendResponse({ ok: true, tab }))
+      .catch((error) =>
+        sendResponse({
+          ok: false,
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
+    return true;
   }
 });
 chrome.tabs.onRemoved.addListener(async (tabId) => {

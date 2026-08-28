@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AgentBridge",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Let a paired local or remote Codex ask the signed-in ChatGPT webpage through AgentBridge.",
   "minimum_chrome_version": "116",
   "permissions": ["tabs", "storage", "scripting"],
@@ -20,6 +20,7 @@
     }
   ],
   "action": {
-    "default_title": "AgentBridge"
+    "default_title": "AgentBridge",
+    "default_popup": "popup.html"
   }
 }

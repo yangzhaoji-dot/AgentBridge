@@ -19,6 +19,18 @@ function Test-ConnectorHealth {
     }
 }
 
+function Test-OwnedConnector {
+    if (-not (Test-Path -LiteralPath $pidPath)) {
+        return $false
+    }
+    $savedPid = [int](Get-Content -LiteralPath $pidPath -Raw).Trim()
+    $process = Get-CimInstance Win32_Process -Filter "ProcessId = $savedPid" -ErrorAction SilentlyContinue
+    if ($null -eq $process) {
+        return $false
+    }
+    return $process.CommandLine -like '*agentbridge_connector*'
+}
+
 try {
     if ([string]::IsNullOrWhiteSpace($env:AGENTBRIDGE_REMOTE_WS_URL)) {
         throw '请先设置 AGENTBRIDGE_REMOTE_WS_URL，例如 wss://bridge.example.com/ws/connector。'
@@ -30,28 +42,33 @@ try {
         throw "找不到 Python 虚拟环境：$pythonPath"
     }
     if (Test-ConnectorHealth) {
-        throw '8765 端口已有服务。请先停止本机 AgentBridge，再启动 Connector 模式。'
+        if (-not (Test-OwnedConnector)) {
+            throw '8765 端口已有服务，但不是本脚本启动的 AgentBridge Connector。'
+        }
+        Write-Host 'AgentBridge Connector 已经在运行。' -ForegroundColor DarkGreen
     }
-    if (Get-NetTCPConnection -LocalPort 8765 -State Listen -ErrorAction SilentlyContinue) {
-        throw '8765 端口已被其他程序占用。'
-    }
+    else {
+        if (Get-NetTCPConnection -LocalPort 8765 -State Listen -ErrorAction SilentlyContinue) {
+            throw '8765 端口已被其他程序占用。'
+        }
 
-    New-Item -ItemType Directory -Path $logDir -Force | Out-Null
-    $process = Start-Process -FilePath $pythonPath `
-        -ArgumentList @('-m', 'agentbridge_connector') `
-        -WorkingDirectory $projectRoot `
-        -WindowStyle Hidden `
-        -RedirectStandardOutput (Join-Path $logDir 'agentbridge-connector.out.log') `
-        -RedirectStandardError (Join-Path $logDir 'agentbridge-connector.err.log') `
-        -PassThru
-    [IO.File]::WriteAllText($pidPath, [string]$process.Id)
+        New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+        $process = Start-Process -FilePath $pythonPath `
+            -ArgumentList @('-m', 'agentbridge_connector') `
+            -WorkingDirectory $projectRoot `
+            -WindowStyle Hidden `
+            -RedirectStandardOutput (Join-Path $logDir 'agentbridge-connector.out.log') `
+            -RedirectStandardError (Join-Path $logDir 'agentbridge-connector.err.log') `
+            -PassThru
+        [IO.File]::WriteAllText($pidPath, [string]$process.Id)
 
-    for ($attempt = 0; $attempt -lt 80; $attempt++) {
-        if (Test-ConnectorHealth) { break }
-        Start-Sleep -Milliseconds 250
-    }
-    if (-not (Test-ConnectorHealth)) {
-        throw 'Connector 没有按时启动。请检查 .runtime\logs\agentbridge-connector.err.log。'
+        for ($attempt = 0; $attempt -lt 80; $attempt++) {
+            if (Test-ConnectorHealth) { break }
+            Start-Sleep -Milliseconds 250
+        }
+        if (-not (Test-ConnectorHealth)) {
+            throw 'Connector 没有按时启动。请检查 .runtime\logs\agentbridge-connector.err.log。'
+        }
     }
 
     $status = Invoke-RestMethod -Uri $statusUrl -TimeoutSec 2

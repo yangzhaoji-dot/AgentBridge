@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AgentBridge</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1>AgentBridge</h1>
+          <p id="connection-status">正在读取本机连接状态…</p>
+        </div>
+        <button id="refresh" title="刷新 ChatGPT 对话列表">刷新</button>
+      </header>
+
+      <section aria-labelledby="dialog-title">
+        <h2 id="dialog-title">选择专用 ChatGPT 对话</h2>
+        <p class="hint">
+          服务器任务只会发送到你在这里选择的一个标签页，不会群发到其他对话。
+        </p>
+        <div id="tabs" class="tabs" aria-live="polite"></div>
+        <p id="empty" class="empty" hidden>
+          未找到 ChatGPT 标签页。请先打开并登录 chatgpt.com。
+        </p>
+      </section>
+
+      <p id="message" class="message" aria-live="polite"></p>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

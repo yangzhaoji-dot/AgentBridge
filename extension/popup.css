@@ -1,0 +1,109 @@
+:root {
+  color-scheme: light dark;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+body {
+  width: 360px;
+  margin: 0;
+  color: #182230;
+  background: #f7f8fa;
+}
+
+main {
+  padding: 16px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 18px;
+}
+
+h2 {
+  margin-top: 20px;
+  font-size: 14px;
+}
+
+#connection-status,
+.hint,
+.message {
+  margin-top: 5px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #536170;
+}
+
+button {
+  border: 1px solid #cbd3dc;
+  border-radius: 7px;
+  padding: 7px 10px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  background: #fff;
+}
+
+button:hover {
+  border-color: #4587d7;
+}
+
+.tabs {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  max-height: 285px;
+  overflow-y: auto;
+}
+
+.tab {
+  width: 100%;
+  text-align: left;
+  padding: 10px;
+}
+
+.tab.selected {
+  border-color: #2670c9;
+  background: #eaf3ff;
+}
+
+.tab-title {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tab-meta {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #607083;
+}
+
+.empty {
+  margin-top: 16px;
+  color: #7a3340;
+  font-size: 13px;
+}
+
+.message.error {
+  color: #a12635;
+}
+
+.message.ok {
+  color: #177245;
+}

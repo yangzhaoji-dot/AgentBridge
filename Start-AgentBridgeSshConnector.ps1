@@ -1,32 +1,37 @@
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true)]
+    [string]$ProfilePath,
     [string]$SshHost,
-    [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$')]
-    [Parameter(Mandatory = $true)]
     [string]$DeviceId,
-    [ValidatePattern('^/[A-Za-z0-9._/-]+$')]
-    [Parameter(Mandatory = $true)]
     [string]$RemoteEnvPath,
-    [ValidateRange(1024, 65535)]
-    [int]$LocalPort = 18765,
-    [ValidateRange(1, 65535)]
-    [int]$RemotePort = 8765,
+    [int]$LocalPort = 0,
+    [int]$RemotePort = 0,
     [switch]$NoPause
 )
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = $PSScriptRoot
+. (Join-Path $projectRoot 'AgentBridgeSshProfile.ps1')
 
 try {
+    $profile = Get-AgentBridgeSshProfile $ProfilePath
+    if ([string]::IsNullOrWhiteSpace($SshHost) -and $null -ne $profile) { $SshHost = $profile.ssh_host }
+    if ([string]::IsNullOrWhiteSpace($DeviceId) -and $null -ne $profile) { $DeviceId = $profile.device_id }
+    if ([string]::IsNullOrWhiteSpace($RemoteEnvPath) -and $null -ne $profile) { $RemoteEnvPath = $profile.remote_env_path }
+    if ($LocalPort -eq 0) { $LocalPort = if ($null -ne $profile) { [int]$profile.local_port } else { 18765 } }
+    if ($RemotePort -eq 0) { $RemotePort = if ($null -ne $profile) { [int]$profile.remote_port } else { 8765 } }
+    Assert-AgentBridgeSshConnection `
+        -SshHost $SshHost `
+        -DeviceId $DeviceId `
+        -RemoteEnvPath $RemoteEnvPath `
+        -LocalPort $LocalPort `
+        -RemotePort $RemotePort
+
     & (Join-Path $projectRoot 'Start-AgentBridgeSshTunnel.ps1') `
         -SshHost $SshHost `
         -LocalPort $LocalPort `
         -RemotePort $RemotePort `
         -NoPause
-    if ($LASTEXITCODE -ne 0) {
-        throw 'SSH 隧道启动失败。'
-    }
 
     $sshPath = (Get-Command ssh -ErrorAction Stop).Source
     $remotePython = @"
@@ -58,9 +63,6 @@ sys.stdout.write(token)
         $env:AGENTBRIDGE_PAIRING_TOKEN = $pairingToken
         $env:AGENTBRIDGE_DEVICE_ID = $DeviceId
         & (Join-Path $projectRoot 'Start-AgentBridgeConnector.ps1') -NoPause
-        if ($LASTEXITCODE -ne 0) {
-            throw '本机 Connector 启动失败。'
-        }
     }
     finally {
         if ($null -eq $oldUrl) { Remove-Item Env:AGENTBRIDGE_REMOTE_WS_URL -ErrorAction SilentlyContinue } else { $env:AGENTBRIDGE_REMOTE_WS_URL = $oldUrl }

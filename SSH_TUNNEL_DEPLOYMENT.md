@@ -25,15 +25,25 @@ replace the loopback URL with an unencrypted remote `ws://server:port` address.
   helper reads only that device's token through SSH and never prints it.
 - Edge or Chrome has the AgentBridge extension loaded.
 
+## One-time nonsecret configuration
+
+This saves only connection metadata in your Windows user profile. It does not
+save or print the pairing token.
+
+```powershell
+.\Set-AgentBridgeSshProfile.ps1 `
+  -SshHost cuixing-server `
+  -DeviceId cuixing-desktop `
+  -RemoteEnvPath /home/user1/.config/agentbridge/relay.env `
+  -RemoteProjectPath /home/user1/cuixing/AgentBridge
+```
+
 ## Start on the browser computer
 
 From the AgentBridge project folder in PowerShell:
 
 ```powershell
-.\Start-AgentBridgeSshConnector.ps1 `
-  -SshHost cuixing-server `
-  -DeviceId cuixing-desktop `
-  -RemoteEnvPath /home/user1/.config/agentbridge/relay.env
+.\Start-AgentBridgeSshConnector.ps1
 ```
 
 The command starts a hidden SSH tunnel at local port `18765`, reads the
@@ -67,13 +77,16 @@ curl http://127.0.0.1:8765/api/status
 
 Expected: `connector_count` is at least `1` and lists `cuixing-desktop`.
 
+For a compact local status report:
+
+```powershell
+.\Get-AgentBridgeSshStatus.ps1
+```
+
 To test a full server MCP call without sending sensitive data:
 
-```bash
-cd /home/user1/cuixing/AgentBridge
-.venv/bin/python -m scripts.smoke_remote_agentbridge \
-  --device-id cuixing-desktop \
-  --prompt '请只回复 AgentBridge SSH smoke test OK。'
+```powershell
+.\Test-AgentBridgeSshBridge.ps1
 ```
 
 ## Stop

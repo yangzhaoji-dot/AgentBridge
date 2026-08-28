@@ -20,6 +20,18 @@ $items = @(
         Script = 'Stop-AgentBridge.ps1'
         Description = '停止 AgentBridge MCP 服务'
         Icon = "$env:SystemRoot\System32\shell32.dll,131"
+    },
+    @{
+        Name = '启动 AgentBridge SSH.lnk'
+        Script = 'Start-AgentBridgeSshConnector.ps1'
+        Description = '通过 SSH 隧道启动服务器到 Edge ChatGPT 的 AgentBridge'
+        Icon = "$env:SystemRoot\System32\shell32.dll,220"
+    },
+    @{
+        Name = '停止 AgentBridge SSH.lnk'
+        Script = 'Stop-AgentBridgeSshConnector.ps1'
+        Description = '停止 AgentBridge Connector 和 SSH 隧道'
+        Icon = "$env:SystemRoot\System32\shell32.dll,131"
     }
 )
 

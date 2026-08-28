@@ -64,7 +64,7 @@ def create_app(
 
     app = FastAPI(
         title="AgentBridge Remote Relay",
-        version="0.2.0-dev",
+        version="0.3.0-dev",
         lifespan=lifespan,
     )
     app.state.agentbridge = relay_bridge
@@ -73,7 +73,7 @@ def create_app(
     async def root() -> dict[str, Any]:
         return {
             "name": "AgentBridge Remote Relay",
-            "version": "0.2.0-dev",
+            "version": "0.3.0-dev",
             "mcp_url": "http://127.0.0.1:8765/mcp",
             **(await relay_bridge.status()),
         }

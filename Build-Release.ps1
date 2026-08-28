@@ -35,6 +35,7 @@ $items = @(
     '.env.example',
     '.gitattributes',
     '.gitignore',
+    'AgentBridgeSshProfile.ps1',
     'AGENTS.md',
     'CONTRIBUTING.md',
     'Create-AgentBridgeShortcuts.ps1',
@@ -45,6 +46,7 @@ $items = @(
     'package.json',
     'README.md',
     'requirements.txt',
+    'Set-AgentBridgeSshProfile.ps1',
     'SECURITY.md',
     'SSH_TUNNEL_DEPLOYMENT.md',
     'Start-AgentBridge.ps1',
@@ -55,6 +57,8 @@ $items = @(
     'Stop-AgentBridgeSshConnector.ps1',
     'Stop-AgentBridgeSshTunnel.ps1',
     'Stop-AgentBridge.ps1',
+    'Get-AgentBridgeSshStatus.ps1',
+    'Test-AgentBridgeSshBridge.ps1',
     'SERVER_DEPLOYMENT.md',
     'VERSION'
 )

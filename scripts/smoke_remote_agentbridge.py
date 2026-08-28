@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import base64
 
 import httpx
 from mcp import ClientSession
@@ -41,11 +42,21 @@ def main() -> None:
         "--prompt",
         default="请只回复 AgentBridge remote smoke test OK。",
     )
+    parser.add_argument(
+        "--prompt-base64",
+        help="UTF-8 prompt encoded as base64; takes precedence over --prompt",
+    )
     parser.add_argument("--timeout", type=float, default=240.0)
     args = parser.parse_args()
     if not 10 <= args.timeout <= 900:
         raise SystemExit("--timeout must be between 10 and 900 seconds")
-    asyncio.run(run(args.url, args.device_id, args.prompt, args.timeout))
+    prompt = args.prompt
+    if args.prompt_base64:
+        try:
+            prompt = base64.b64decode(args.prompt_base64, validate=True).decode("utf-8")
+        except (ValueError, UnicodeDecodeError) as exc:
+            raise SystemExit("--prompt-base64 must be valid UTF-8 base64") from exc
+    asyncio.run(run(args.url, args.device_id, prompt, args.timeout))
 
 
 if __name__ == "__main__":
