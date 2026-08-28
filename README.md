@@ -163,6 +163,7 @@ AgentBridge path.
 .\.venv\Scripts\python.exe -m pytest
 .\.venv\Scripts\python.exe -m scripts.smoke_agentbridge_mcp
 .\.venv\Scripts\python.exe -m scripts.smoke_agentbridge_roundtrip
+.\.venv\Scripts\python.exe -m scripts.smoke_remote_agentbridge --device-id your-browser-01
 node --check .\extension\background.js
 node --check .\extension\chatgpt_adapter.js
 node --check .\extension\content.js

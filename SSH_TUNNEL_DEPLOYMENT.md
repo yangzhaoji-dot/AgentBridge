@@ -67,6 +67,15 @@ curl http://127.0.0.1:8765/api/status
 
 Expected: `connector_count` is at least `1` and lists `cuixing-desktop`.
 
+To test a full server MCP call without sending sensitive data:
+
+```bash
+cd /home/user1/cuixing/AgentBridge
+.venv/bin/python -m scripts.smoke_remote_agentbridge \
+  --device-id cuixing-desktop \
+  --prompt '请只回复 AgentBridge SSH smoke test OK。'
+```
+
 ## Stop
 
 ```powershell
