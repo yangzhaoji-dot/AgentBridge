@@ -157,6 +157,7 @@ async def test_remote_relay_connector_and_extension_complete_a_two_websocket_rou
             extension_request = json.loads(await extension_socket.recv())
             assert extension_request["type"] == "ask.request"
             assert extension_request["prompt"] == "What is 1+1?"
+            assert extension_request["completion_marker"].startswith("AGENTBRIDGE_DONE_")
 
             await extension_socket.send(
                 json.dumps(

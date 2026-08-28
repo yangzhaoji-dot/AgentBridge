@@ -11,7 +11,7 @@ import websockets
 from websockets.asyncio.client import ClientConnection
 
 from agentbridge_connector.settings import EdgeConnectorSettings
-from agentbridge_server.bridge import AgentBridge
+from agentbridge_server.bridge import AgentBridge, validate_completion_marker
 
 
 logger = logging.getLogger("agentbridge.connector")
@@ -82,6 +82,7 @@ class EdgeConnectorService:
         request_id = message.get("id")
         prompt = message.get("prompt")
         timeout_ms = message.get("timeout_ms")
+        completion_marker = message.get("completion_marker")
         if not isinstance(request_id, str) or not request_id:
             return
         if not isinstance(prompt, str):
@@ -102,11 +103,20 @@ class EdgeConnectorService:
                 }
             )
             return
+        try:
+            completion_marker = validate_completion_marker(completion_marker)
+        except ValueError as exc:
+            await (sender or self._send_remote)(
+                {"type": "ask.error", "id": request_id, "error": str(exc)}
+            )
+            return
 
         response_sender = sender or self._send_remote
         try:
             answer = await self.bridge.ask_chatgpt(
-                prompt, timeout_seconds=timeout_ms / 1000
+                prompt,
+                timeout_seconds=timeout_ms / 1000,
+                completion_marker=completion_marker,
             )
             await response_sender({"type": "ask.response", "id": request_id, "answer": answer})
         except Exception as exc:

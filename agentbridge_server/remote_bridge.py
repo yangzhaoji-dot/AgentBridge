@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from typing import Any, Protocol
 from uuid import uuid4
 
+from agentbridge_server.bridge import make_completion_marker
 
 class ConnectorSocket(Protocol):
     async def send_json(self, data: Any) -> None: ...
@@ -94,7 +95,12 @@ class RemoteAgentBridge:
         }
 
     async def ask_chatgpt(
-        self, prompt: str, *, device_id: str, timeout_seconds: float
+        self,
+        prompt: str,
+        *,
+        device_id: str,
+        timeout_seconds: float,
+        require_completion_marker: bool = False,
     ) -> str:
         prompt = prompt.strip()
         device_id = device_id.strip()
@@ -120,15 +126,19 @@ class RemoteAgentBridge:
             future: asyncio.Future[str] = asyncio.get_running_loop().create_future()
             self._pending[request_id] = PendingRequest(device_id, future)
             try:
+                completion_marker = (
+                    make_completion_marker() if require_completion_marker else None
+                )
                 async with self._send_lock:
-                    await socket.send_json(
-                        {
-                            "type": "ask.request",
-                            "id": request_id,
-                            "prompt": prompt,
-                            "timeout_ms": int(timeout_seconds * 1000),
-                        }
-                    )
+                    request = {
+                        "type": "ask.request",
+                        "id": request_id,
+                        "prompt": prompt,
+                        "timeout_ms": int(timeout_seconds * 1000),
+                    }
+                    if completion_marker is not None:
+                        request["completion_marker"] = completion_marker
+                    await socket.send_json(request)
                 return await asyncio.wait_for(future, timeout=timeout_seconds + 5)
             except asyncio.TimeoutError as exc:
                 raise TimeoutError(

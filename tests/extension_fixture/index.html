@@ -11,6 +11,7 @@
       <button id="run-adapter" type="button">Run adapter</button>
       <button id="run-stalled-adapter" type="button">Run stalled adapter</button>
       <button id="run-stop-gone-adapter" type="button">Run stop-gone adapter</button>
+      <button id="run-marker-adapter" type="button">Run marker adapter</button>
       <section id="conversation"></section>
       <pre id="adapter-result"></pre>
     </main>
@@ -45,6 +46,18 @@
           setTimeout(() => {
             sendButton.dataset.testid = "send-button";
           }, 5000);
+          return;
+        }
+
+        const markerMatch = document.querySelector("#prompt-textarea").innerText.match(
+          /exact marker ([A-Za-z0-9_.:-]+)/,
+        );
+        if (markerMatch) {
+          answer.textContent = "MARKER_FIRST";
+          setTimeout(() => {
+            answer.textContent += `_COMPLETE_${markerMatch[1]}`;
+            stop.remove();
+          }, 3500);
           return;
         }
 
@@ -88,6 +101,19 @@
         const result = document.querySelector("#adapter-result");
         try {
           result.textContent = await AgentBridgeChatGPT.ask("stop gone?", 15000);
+        } catch (error) {
+          result.textContent = `ERROR: ${error.message}`;
+        }
+      });
+
+      document.querySelector("#run-marker-adapter").addEventListener("click", async () => {
+        const result = document.querySelector("#adapter-result");
+        try {
+          result.textContent = await AgentBridgeChatGPT.ask(
+            "marker response?",
+            30000,
+            "AGENTBRIDGE_DONE_fixture",
+          );
         } catch (error) {
           result.textContent = `ERROR: ${error.message}`;
         }

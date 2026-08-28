@@ -62,6 +62,7 @@ async def test_connector_forwards_remote_request_to_the_local_extension() -> Non
                 "id": "remote-request",
                 "prompt": "What is 1+1?",
                 "timeout_ms": 20_000,
+                "completion_marker": "AGENTBRIDGE_DONE_test",
             },
             sender=send_reply,
         )
@@ -70,6 +71,7 @@ async def test_connector_forwards_remote_request_to_the_local_extension() -> Non
     extension_request = extension.messages[-1]
     assert extension_request["type"] == "ask.request"
     assert extension_request["prompt"] == "What is 1+1?"
+    assert extension_request["completion_marker"] == "AGENTBRIDGE_DONE_test"
 
     await service.bridge.handle_extension_message(
         {

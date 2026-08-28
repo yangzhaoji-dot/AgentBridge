@@ -10,7 +10,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from mcp.server.fastmcp import FastMCP
 
-from agentbridge_server.bridge import AgentBridge
+from agentbridge_server.bridge import AgentBridge, make_completion_marker
 from agentbridge_server.settings import AgentBridgeSettings
 
 
@@ -40,12 +40,15 @@ mcp = FastMCP(
     description=(
         "Send one plain-text prompt to the dedicated signed-in ChatGPT tab in Edge "
         "and return the complete assistant response. This transmits the prompt to "
-        "ChatGPT and can take up to three minutes."
+        "ChatGPT and can take up to three minutes. Completion markers are enabled "
+        "by default to prevent mid-response truncation."
     ),
 )
-async def ask_chatgpt(prompt: str) -> str:
+async def ask_chatgpt(prompt: str, require_completion_marker: bool = True) -> str:
     return await bridge.ask_chatgpt(
-        prompt, timeout_seconds=settings.request_timeout_seconds
+        prompt,
+        timeout_seconds=settings.request_timeout_seconds,
+        completion_marker=make_completion_marker() if require_completion_marker else None,
     )
 
 

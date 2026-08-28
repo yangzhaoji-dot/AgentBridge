@@ -31,8 +31,11 @@ commands, file access, credentials, or decisions that require user approval.
    or explicit decision criteria. For lengthy work, split the question by
    decision rather than requesting an unconstrained essay.
 4. Call `ask_chatgpt(prompt, device_id)` only when the paired device is known
-   to be available. AgentBridge never selects a browser tab on the agent's
-   behalf; the user chooses the dedicated ChatGPT tab in the extension popup.
+   to be available. Completion markers are enabled by default; pass
+   `require_completion_marker=true` explicitly for long or structured requests
+   when clarity matters, and use `false` only for compatibility testing.
+   AgentBridge never selects a browser tab on the agent's behalf; the user
+   chooses the dedicated ChatGPT tab in the extension popup.
 
 ## Safety and authority
 

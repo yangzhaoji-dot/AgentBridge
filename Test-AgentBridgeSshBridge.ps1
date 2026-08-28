@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [string]$ProfilePath,
-    [string]$Prompt = '请只回复 AgentBridge SSH smoke test OK。'
+    [string]$Prompt = '请只回复 AgentBridge SSH smoke test OK。',
+    [switch]$NoCompletionMarker
 )
 
 $ErrorActionPreference = 'Stop'
@@ -23,7 +24,8 @@ try {
 
     $sshPath = (Get-Command ssh -ErrorAction Stop).Source
     $encodedPrompt = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($Prompt))
-    $remoteCommand = "cd $($profile.remote_project_path) && .venv/bin/python -m scripts.smoke_remote_agentbridge --device-id $($profile.device_id) --prompt-base64 $encodedPrompt"
+    $markerOption = if ($NoCompletionMarker) { ' --no-completion-marker' } else { '' }
+    $remoteCommand = "cd $($profile.remote_project_path) && .venv/bin/python -m scripts.smoke_remote_agentbridge --device-id $($profile.device_id) --prompt-base64 $encodedPrompt$markerOption"
     & $sshPath -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=12 $profile.ssh_host $remoteCommand
     if ($LASTEXITCODE -ne 0) { throw '服务器 smoke 测试失败。' }
 }

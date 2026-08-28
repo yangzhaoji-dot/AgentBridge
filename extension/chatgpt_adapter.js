@@ -50,6 +50,18 @@ globalThis.AgentBridgeChatGPT = (() => {
     return TRANSIENT_ASSISTANT_TEXT.some((pattern) => pattern.test(normalized));
   }
 
+  function stripCompletionMarker(text, marker) {
+    if (!marker) return text;
+    const markerIndex = text.lastIndexOf(marker);
+    if (markerIndex < 0) return text;
+    return text.slice(0, markerIndex).replace(/\s+$/u, "");
+  }
+
+  function promptWithCompletionMarker(prompt, marker) {
+    if (!marker) return prompt;
+    return `${prompt}\n\n[AgentBridge completion protocol]\nWhen the answer is fully complete, write the exact marker ${marker} on its own final line. Do not write this marker earlier or inside the answer.`;
+  }
+
   function setPromptText(input, text) {
     input.focus();
     if (input instanceof HTMLTextAreaElement || input instanceof HTMLInputElement) {
@@ -109,7 +121,7 @@ globalThis.AgentBridgeChatGPT = (() => {
     throw new Error(errorMessage);
   }
 
-  async function waitForAnswer(beforeCount, timeoutMs) {
+  async function waitForAnswer(beforeCount, timeoutMs, completionMarker) {
     await waitUntil(
       () => {
         const messages = assistantMessages();
@@ -150,9 +162,11 @@ globalThis.AgentBridgeChatGPT = (() => {
         sawBusyControl = true;
       }
       const stableForMs = Date.now() - lastChangeAt;
-      const hasUsableText =
-        text &&
-        !isTransientAssistantText(text);
+      const markerSeen = Boolean(completionMarker && text.includes(completionMarker));
+      const answerText = stripCompletionMarker(text, completionMarker);
+      const hasUsableText = answerText && !isTransientAssistantText(answerText);
+      const markerCompletion =
+        Boolean(completionMarker) && markerSeen && stableForMs >= CONTROL_SETTLE_MS;
       const controlsConfirmCompletion =
         sawBusyControl && !stopButton && sendReady && stableForMs >= CONTROL_SETTLE_MS;
       const stopGoneCompletion =
@@ -167,30 +181,50 @@ globalThis.AgentBridgeChatGPT = (() => {
         Date.now() - responseStartedAt >= FALLBACK_STABLE_MS &&
         stableForMs >= FALLBACK_STABLE_MS;
 
-      if (hasUsableText && (controlsConfirmCompletion || stopGoneCompletion || fallbackCompletion)) {
+      if (
+        hasUsableText &&
+        (markerCompletion ||
+          (!completionMarker &&
+            (controlsConfirmCompletion || stopGoneCompletion || fallbackCompletion)))
+      ) {
         console.debug("AgentBridge captured a completed ChatGPT answer", {
-          completion: controlsConfirmCompletion
-            ? "composer-ready"
-            : stopGoneCompletion
-              ? "stop-gone"
-              : "conservative-fallback",
+          completion: markerCompletion
+            ? "completion-marker"
+            : controlsConfirmCompletion
+              ? "composer-ready"
+              : stopGoneCompletion
+                ? "stop-gone"
+                : "conservative-fallback",
           stableForMs,
         });
-        return text;
+        return answerText;
+      }
+      if (completionMarker && markerSeen && stopButton) {
+        // A marker is sufficient evidence of completion; allow the UI to
+        // finish painting without waiting for a possibly stale stop control.
+        await waitForMutation(CONTROL_SETTLE_MS);
       }
       await waitForMutation(350);
+    }
+    if (completionMarker) {
+      throw new Error(
+        `ChatGPT response did not include completion marker before ${Math.round(timeoutMs / 1000)}s`,
+      );
     }
     throw new Error(`ChatGPT response timed out after ${Math.round(timeoutMs / 1000)}s`);
   }
 
-  async function ask(prompt, timeoutMs = 180000) {
+  async function ask(prompt, timeoutMs = 180000, completionMarker = null) {
+    if (completionMarker && !/^[A-Za-z0-9_.:-]{8,128}$/u.test(completionMarker)) {
+      throw new Error("Invalid AgentBridge completion marker");
+    }
     const input = await waitUntil(
       () => firstVisible(PROMPT_SELECTORS),
       15000,
       "Cannot find the ChatGPT prompt input. The page may be signed out or changed.",
     );
     const beforeCount = assistantMessages().length;
-    setPromptText(input, prompt);
+    setPromptText(input, promptWithCompletionMarker(prompt, completionMarker));
 
     const sendButton = await waitUntil(
       () => {
@@ -201,7 +235,7 @@ globalThis.AgentBridgeChatGPT = (() => {
       "Cannot find an enabled ChatGPT send button.",
     );
     sendButton.click();
-    return waitForAnswer(beforeCount, timeoutMs);
+    return waitForAnswer(beforeCount, timeoutMs, completionMarker);
   }
 
   return { ask };

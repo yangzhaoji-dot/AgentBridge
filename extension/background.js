@@ -185,6 +185,7 @@ async function askChatGPT(message) {
       id: message.id,
       prompt: message.prompt,
       timeoutMs: message.timeout_ms,
+      completionMarker: message.completion_marker,
     });
     if (!result?.ok) {
       throw new Error(result?.error || "ChatGPT content script returned no result");

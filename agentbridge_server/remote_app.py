@@ -45,14 +45,20 @@ def create_app(
         description=(
             "Send one plain-text prompt to the paired device's dedicated signed-in "
             "ChatGPT tab and return the complete assistant response. This transmits "
-            "the prompt to ChatGPT and can take up to three minutes."
+            "the prompt to ChatGPT and can take up to three minutes. Completion "
+            "markers are enabled by default to prevent mid-response truncation."
         ),
     )
-    async def ask_chatgpt(prompt: str, device_id: str = "local-dev") -> str:
+    async def ask_chatgpt(
+        prompt: str,
+        device_id: str = "local-dev",
+        require_completion_marker: bool = True,
+    ) -> str:
         return await relay_bridge.ask_chatgpt(
             prompt,
             device_id=device_id,
             timeout_seconds=relay_settings.request_timeout_seconds,
+            require_completion_marker=require_completion_marker,
         )
 
     mcp_http_app = mcp.streamable_http_app()

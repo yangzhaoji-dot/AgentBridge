@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import re
+import secrets
+import secrets
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Protocol
@@ -19,6 +22,25 @@ class ExtensionOfflineError(RuntimeError):
 
 class ExtensionResponseError(RuntimeError):
     pass
+
+
+COMPLETION_MARKER_PATTERN = re.compile(r"^[A-Za-z0-9_.:-]{8,128}$")
+
+
+def validate_completion_marker(marker: str | None) -> str | None:
+    if marker is None:
+        return None
+    if not isinstance(marker, str) or not COMPLETION_MARKER_PATTERN.fullmatch(marker):
+        raise ValueError("completion_marker must be 8-128 safe marker characters")
+    return marker
+
+
+def make_completion_marker() -> str:
+    return f"AGENTBRIDGE_DONE_{secrets.token_hex(16)}"
+
+
+def make_completion_marker() -> str:
+    return f"AGENTBRIDGE_DONE_{secrets.token_hex(16)}"
 
 
 @dataclass(frozen=True)
@@ -88,12 +110,19 @@ class AgentBridge:
             ),
         }
 
-    async def ask_chatgpt(self, prompt: str, *, timeout_seconds: float) -> str:
+    async def ask_chatgpt(
+        self,
+        prompt: str,
+        *,
+        timeout_seconds: float,
+        completion_marker: str | None = None,
+    ) -> str:
         prompt = prompt.strip()
         if not prompt:
             raise ValueError("prompt cannot be empty")
         if len(prompt) > 50_000:
             raise ValueError("prompt is too long; maximum is 50,000 characters")
+        completion_marker = validate_completion_marker(completion_marker)
 
         async with self._request_lock:
             async with self._connection_lock:
@@ -109,14 +138,15 @@ class AgentBridge:
             self._pending[request_id] = future
             try:
                 async with self._send_lock:
-                    await socket.send_json(
-                        {
-                            "type": "ask.request",
-                            "id": request_id,
-                            "prompt": prompt,
-                            "timeout_ms": int(timeout_seconds * 1000),
-                        }
-                    )
+                    request = {
+                        "type": "ask.request",
+                        "id": request_id,
+                        "prompt": prompt,
+                        "timeout_ms": int(timeout_seconds * 1000),
+                    }
+                    if completion_marker is not None:
+                        request["completion_marker"] = completion_marker
+                    await socket.send_json(request)
                 return await asyncio.wait_for(future, timeout=timeout_seconds + 5)
             except asyncio.TimeoutError as exc:
                 raise TimeoutError(

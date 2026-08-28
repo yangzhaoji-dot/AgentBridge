@@ -9,7 +9,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 
   busy = true;
-  AgentBridgeChatGPT.ask(message.prompt, message.timeoutMs)
+  AgentBridgeChatGPT.ask(
+    message.prompt,
+    message.timeoutMs,
+    message.completionMarker,
+  )
     .then((answer) => sendResponse({ ok: true, answer }))
     .catch((error) =>
       sendResponse({

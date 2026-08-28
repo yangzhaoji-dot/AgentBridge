@@ -42,6 +42,32 @@ async def test_remote_bridge_routes_a_server_request_to_the_selected_device() ->
 
 
 @pytest.mark.asyncio
+async def test_remote_bridge_includes_a_completion_marker_when_requested() -> None:
+    bridge = RemoteAgentBridge()
+    connector = FakeConnectorSocket()
+    await bridge.register(connector, device_id="desk-a")
+
+    task = asyncio.create_task(
+        bridge.ask_chatgpt(
+            "return JSON",
+            device_id="desk-a",
+            timeout_seconds=2,
+            require_completion_marker=True,
+        )
+    )
+    await asyncio.sleep(0)
+    request = connector.messages[-1]
+    assert request["completion_marker"].startswith("AGENTBRIDGE_DONE_")
+
+    await bridge.handle_connector_message(
+        connector,
+        device_id="desk-a",
+        message={"type": "ask.response", "id": request["id"], "answer": "{}"},
+    )
+    assert await task == "{}"
+
+
+@pytest.mark.asyncio
 async def test_remote_bridge_reports_when_the_requested_device_is_offline() -> None:
     bridge = RemoteAgentBridge()
 

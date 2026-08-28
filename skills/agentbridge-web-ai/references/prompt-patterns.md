@@ -29,6 +29,11 @@ Return at most 6 items:
 6. confidence and remaining uncertainty
 ```
 
+The default `ask_chatgpt` path already requires a completion marker for this kind
+of structured review. Pass `require_completion_marker=true` explicitly when
+writing the call; the transport then waits for a final marker and does not treat
+a mid-JSON pause as a complete answer.
+
 ## Planning alternative
 
 ```text
