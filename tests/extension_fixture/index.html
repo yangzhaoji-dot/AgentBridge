@@ -9,6 +9,7 @@
       <div id="prompt-textarea" contenteditable="true" role="textbox"></div>
       <button data-testid="send-button" type="button">Send</button>
       <button id="run-adapter" type="button">Run adapter</button>
+      <button id="run-stalled-adapter" type="button">Run stalled adapter</button>
       <section id="conversation"></section>
       <pre id="adapter-result"></pre>
     </main>
@@ -23,6 +24,15 @@
         stop.dataset.testid = "stop-button";
         stop.textContent = "Stop";
         document.body.append(stop);
+
+        if (document.querySelector("#prompt-textarea").innerText.trim() === "long response?") {
+          answer.textContent = "FIRST";
+          setTimeout(() => {
+            answer.textContent += "_COMPLETE";
+            stop.remove();
+          }, 3500);
+          return;
+        }
 
         const chunks = ["FIXTURE", "_", "OK"];
         let index = 0;
@@ -43,6 +53,20 @@
           result.textContent = await AgentBridgeChatGPT.ask("1+1?", 10000);
         } catch (error) {
           result.textContent = `ERROR: ${error.message}`;
+        }
+      });
+
+      document.querySelector("#run-stalled-adapter").addEventListener("click", async () => {
+        const result = document.querySelector("#adapter-result");
+        const originalQuerySelector = document.querySelector.bind(document);
+        document.querySelector = (selector) =>
+          selector.includes("stop") ? null : originalQuerySelector(selector);
+        try {
+          result.textContent = await AgentBridgeChatGPT.ask("long response?", 30000);
+        } catch (error) {
+          result.textContent = `ERROR: ${error.message}`;
+        } finally {
+          document.querySelector = originalQuerySelector;
         }
       });
     </script>

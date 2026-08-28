@@ -36,6 +36,7 @@ $items = @(
     '.gitattributes',
     '.gitignore',
     'AgentBridgeSshProfile.ps1',
+    'CHANGELOG.md',
     'AGENTS.md',
     'CONTRIBUTING.md',
     'Create-AgentBridgeShortcuts.ps1',

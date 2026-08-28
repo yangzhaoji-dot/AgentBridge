@@ -14,9 +14,14 @@ globalThis.AgentBridgeChatGPT = (() => {
   ];
   const STOP_SELECTORS = [
     '[data-testid="stop-button"]',
+    'button[data-testid*="stop"]',
+    'button[aria-label*="Stop generating"]',
+    'button[aria-label*="停止生成"]',
     'button[aria-label*="Stop"]',
     'button[aria-label*="停止"]',
   ];
+  const CONTROL_SETTLE_MS = 1200;
+  const FALLBACK_STABLE_MS = 15000;
   const ASSISTANT_SELECTOR = '[data-message-author-role="assistant"]';
   const TRANSIENT_ASSISTANT_TEXT = [
     /^正在思考[.…]*$/u,
@@ -116,6 +121,8 @@ globalThis.AgentBridgeChatGPT = (() => {
     const deadline = Date.now() + timeoutMs;
     let previousText = "";
     let lastChangeAt = Date.now();
+    let responseStartedAt = null;
+    let sawBusyControl = false;
 
     while (Date.now() < deadline) {
       // ChatGPT can replace the whole message element while streaming. Always
@@ -125,16 +132,32 @@ globalThis.AgentBridgeChatGPT = (() => {
       if (text !== previousText) {
         previousText = text;
         lastChangeAt = Date.now();
+        responseStartedAt ??= lastChangeAt;
       }
 
       const stopButton = firstVisible(STOP_SELECTORS);
+      const sendButton = firstVisible(SEND_SELECTORS);
+      const sendReady = Boolean(sendButton && !sendButton.disabled);
+      if (stopButton || (sendButton && sendButton.disabled)) {
+        sawBusyControl = true;
+      }
       const stableForMs = Date.now() - lastChangeAt;
-      if (
+      const hasUsableText =
         text &&
-        !isTransientAssistantText(text) &&
-        !stopButton &&
-        stableForMs >= 2200
-      ) {
+        !isTransientAssistantText(text);
+      const controlsConfirmCompletion =
+        sawBusyControl && !stopButton && sendReady && stableForMs >= CONTROL_SETTLE_MS;
+      const fallbackCompletion =
+        !sawBusyControl &&
+        responseStartedAt !== null &&
+        Date.now() - responseStartedAt >= FALLBACK_STABLE_MS &&
+        stableForMs >= FALLBACK_STABLE_MS;
+
+      if (hasUsableText && (controlsConfirmCompletion || fallbackCompletion)) {
+        console.debug("AgentBridge captured a completed ChatGPT answer", {
+          completion: controlsConfirmCompletion ? "composer-ready" : "conservative-fallback",
+          stableForMs,
+        });
         return text;
       }
       await waitForMutation(350);

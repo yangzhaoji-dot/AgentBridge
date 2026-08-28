@@ -12,3 +12,4 @@ node_modules/
 schemas/
 *.log
 dist/
+.playwright-cli/
