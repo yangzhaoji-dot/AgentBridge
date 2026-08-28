@@ -21,6 +21,7 @@ globalThis.AgentBridgeChatGPT = (() => {
     'button[aria-label*="停止"]',
   ];
   const CONTROL_SETTLE_MS = 1200;
+  const STOP_GONE_SETTLE_MS = 3500;
   const FALLBACK_STABLE_MS = 15000;
   const ASSISTANT_SELECTOR = '[data-message-author-role="assistant"]';
   const TRANSIENT_ASSISTANT_TEXT = [
@@ -123,6 +124,8 @@ globalThis.AgentBridgeChatGPT = (() => {
     let lastChangeAt = Date.now();
     let responseStartedAt = null;
     let sawBusyControl = false;
+    let sawStopControl = false;
+    let lastStopSeenAt = null;
 
     while (Date.now() < deadline) {
       // ChatGPT can replace the whole message element while streaming. Always
@@ -138,7 +141,12 @@ globalThis.AgentBridgeChatGPT = (() => {
       const stopButton = firstVisible(STOP_SELECTORS);
       const sendButton = firstVisible(SEND_SELECTORS);
       const sendReady = Boolean(sendButton && !sendButton.disabled);
-      if (stopButton || (sendButton && sendButton.disabled)) {
+      if (stopButton) {
+        sawBusyControl = true;
+        sawStopControl = true;
+        lastStopSeenAt = Date.now();
+      }
+      if (sendButton && sendButton.disabled) {
         sawBusyControl = true;
       }
       const stableForMs = Date.now() - lastChangeAt;
@@ -147,15 +155,25 @@ globalThis.AgentBridgeChatGPT = (() => {
         !isTransientAssistantText(text);
       const controlsConfirmCompletion =
         sawBusyControl && !stopButton && sendReady && stableForMs >= CONTROL_SETTLE_MS;
+      const stopGoneCompletion =
+        sawStopControl &&
+        !stopButton &&
+        lastStopSeenAt !== null &&
+        Date.now() - lastStopSeenAt >= STOP_GONE_SETTLE_MS &&
+        stableForMs >= STOP_GONE_SETTLE_MS;
       const fallbackCompletion =
-        !sawBusyControl &&
+        !sawStopControl &&
         responseStartedAt !== null &&
         Date.now() - responseStartedAt >= FALLBACK_STABLE_MS &&
         stableForMs >= FALLBACK_STABLE_MS;
 
-      if (hasUsableText && (controlsConfirmCompletion || fallbackCompletion)) {
+      if (hasUsableText && (controlsConfirmCompletion || stopGoneCompletion || fallbackCompletion)) {
         console.debug("AgentBridge captured a completed ChatGPT answer", {
-          completion: controlsConfirmCompletion ? "composer-ready" : "conservative-fallback",
+          completion: controlsConfirmCompletion
+            ? "composer-ready"
+            : stopGoneCompletion
+              ? "stop-gone"
+              : "conservative-fallback",
           stableForMs,
         });
         return text;

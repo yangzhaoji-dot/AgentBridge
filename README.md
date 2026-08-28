@@ -98,6 +98,22 @@ detailed local setup flow.
 Click the AgentBridge extension icon and choose the exact ChatGPT conversation
 to reserve for AgentBridge. Other ChatGPT tabs will not receive tasks.
 
+## Teach Codex when to consult web AI
+
+The repository includes the reusable
+[`agentbridge-web-ai`](skills/agentbridge-web-ai/SKILL.md) skill. It teaches a
+Codex instance when to request a bounded second opinion, how to sanitize the
+prompt, and how to treat incomplete answers or advisory output.
+
+Install it for the current Codex user, then start a new Codex session:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\install_agentbridge_web_ai_skill.py
+```
+
+On the server, run the equivalent `.venv/bin/python
+scripts/install_agentbridge_web_ai_skill.py` as the same user who runs Codex.
+
 The MCP endpoint is:
 
 ```text

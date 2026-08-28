@@ -1,0 +1,4 @@
+interface:
+  display_name: "AgentBridge Web AI"
+  short_description: "Get a bounded independent web-AI review"
+  default_prompt: "Use $agentbridge-web-ai to get an independent critique of this plan."

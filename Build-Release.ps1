@@ -31,6 +31,7 @@ $items = @(
     'deploy',
     'extension',
     'scripts',
+    'skills',
     'tests',
     '.env.example',
     '.gitattributes',

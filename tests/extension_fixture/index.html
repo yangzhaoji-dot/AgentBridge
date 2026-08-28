@@ -10,12 +10,14 @@
       <button data-testid="send-button" type="button">Send</button>
       <button id="run-adapter" type="button">Run adapter</button>
       <button id="run-stalled-adapter" type="button">Run stalled adapter</button>
+      <button id="run-stop-gone-adapter" type="button">Run stop-gone adapter</button>
       <section id="conversation"></section>
       <pre id="adapter-result"></pre>
     </main>
     <script>
       document.querySelector('[data-testid="send-button"]').addEventListener("click", () => {
         const conversation = document.querySelector("#conversation");
+        const sendButton = document.querySelector('[data-testid="send-button"]');
         const answer = document.createElement("article");
         answer.dataset.messageAuthorRole = "assistant";
         conversation.append(answer);
@@ -31,6 +33,18 @@
             answer.textContent += "_COMPLETE";
             stop.remove();
           }, 3500);
+          return;
+        }
+
+        if (document.querySelector("#prompt-textarea").innerText.trim() === "stop gone?") {
+          answer.textContent = "STOP_GONE_COMPLETE";
+          setTimeout(() => {
+            stop.remove();
+            sendButton.removeAttribute("data-testid");
+          }, 120);
+          setTimeout(() => {
+            sendButton.dataset.testid = "send-button";
+          }, 5000);
           return;
         }
 
@@ -67,6 +81,15 @@
           result.textContent = `ERROR: ${error.message}`;
         } finally {
           document.querySelector = originalQuerySelector;
+        }
+      });
+
+      document.querySelector("#run-stop-gone-adapter").addEventListener("click", async () => {
+        const result = document.querySelector("#adapter-result");
+        try {
+          result.textContent = await AgentBridgeChatGPT.ask("stop gone?", 15000);
+        } catch (error) {
+          result.textContent = `ERROR: ${error.message}`;
         }
       });
     </script>
